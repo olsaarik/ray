@@ -122,7 +122,8 @@ class AlphaZeroConfig(AlgorithmConfig):
         self.vf_share_layers = False
         self.mcts_config = {
             "puct_coefficient": 1.0,
-            "num_simulations": 30,
+            "num_simulations": 32,
+            "max_batch_size": 8,
             "temperature": 1.5,
             "dirichlet_epsilon": 0.25,
             "dirichlet_noise": 0.03,
@@ -277,14 +278,15 @@ def alpha_zero_loss(policy, model, dist_class, train_batch):
     value_loss = torch.mean(torch.pow(values - train_batch["value_label"], 2))
     # compute total loss
     total_loss = (policy_loss + value_loss) / 2
-    return total_loss, policy_loss, value_loss
+    return total_loss
 
 
 class AlphaZeroPolicyWrapperClass(AlphaZeroPolicy):
     def __init__(self, obs_space, action_space, config):
+        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         model = ModelCatalog.get_model_v2(
             obs_space, action_space, action_space.n, config["model"], "torch"
-        )
+        ).to(device)
         _, env_creator = Algorithm._get_env_id_and_creator(config["env"], config)
         if config["ranked_rewards"]["enable"]:
             # if r2 is enabled, tne env is wrapped to include a rewards buffer

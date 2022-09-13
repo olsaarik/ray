@@ -16,6 +16,8 @@ class RankedRewardsBuffer:
             self.buffer = self.buffer[1:] + [reward]
 
     def normalize(self, reward):
+        if len(self.buffer) == 0:
+            return 1.0
         reward_threshold = np.percentile(self.buffer, self.percentile)
         if reward < reward_threshold:
             return -1.0
